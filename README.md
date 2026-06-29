@@ -1,64 +1,66 @@
 # App Store Connect Manager
 
-App Store Connect metadata'sını tarayıcıdan yönetmek, çoklu dil lokalizasyonlarını düzenlemek ve AI ile çeviri / ekran görüntüsü üretmek için geliştirilmiş dahili bir Next.js aracı.
+> 🇬🇧 English · [Türkçe](README-tr.md)
 
-Apple App Store Connect API, Google Gemini ve Wiro AI entegrasyonlarını tek bir arayüzde birleştirir. Tüm kimlik bilgileri yalnızca tarayıcınızda (`localStorage`) saklanır; sunucuya kalıcı olarak yazılmaz.
+An internal Next.js tool for managing App Store Connect metadata in the browser, editing multi-locale localizations, and generating translations and screenshots with AI.
+
+It combines the Apple App Store Connect API, Google Gemini, and Wiro AI in a single interface. All credentials are stored only in your browser (`localStorage`) and are never persisted on the server.
 
 ---
 
-## İçindekiler
+## Table of Contents
 
-- [Özellikler](#özellikler)
-- [Mimari](#mimari)
-- [Gereksinimler](#gereksinimler)
-- [Kurulum](#kurulum)
-- [Yapılandırma](#yapılandırma)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Requirements](#requirements)
+- [Getting Started](#getting-started)
+- [Configuration](#configuration)
   - [Apple App Store Connect](#apple-app-store-connect)
   - [Google Gemini](#google-gemini)
   - [Wiro AI](#wiro-ai)
-- [Kullanım](#kullanım)
-- [Proje yapısı](#proje-yapısı)
-- [API uç noktaları](#api-uç-noktaları)
-- [AI prompt dosyaları](#ai-prompt-dosyaları)
-- [Geliştirme](#geliştirme)
-- [Güvenlik notları](#güvenlik-notları)
+- [Usage](#usage)
+- [Project Structure](#project-structure)
+- [API Endpoints](#api-endpoints)
+- [AI Prompt Files](#ai-prompt-files)
+- [Development](#development)
+- [Security Notes](#security-notes)
 
 ---
 
-## Özellikler
+## Features
 
 ### App Store Connect
 
-- **Uygulama listesi** — ASC hesabınızdaki tüm uygulamaları ikon, bundle ID ve birincil locale ile görüntüleme
-- **Metadata düzenleme** — Her locale için name, subtitle, description, keywords, what's new, URL alanlarını düzenleme
-- **Karakter limiti takibi** — App Store Connect limitlerine göre anlık sayaç ve limit aşımı uyarıları
-- **Çoklu locale gezinme** — Kaydedilmemiş değişiklikler ve limit hataları için görsel rozetler
-- **Ekran görüntüsü görüntüleme** — iPhone / iPad setlerini lightbox ile inceleme
-- **Ekran görüntüsü yükleme** — AI ile üretilen görselleri doğrudan ASC'ye yükleme
+- **App listing** — View all apps in your ASC account with icon, bundle ID, and primary locale
+- **Metadata editing** — Edit name, subtitle, description, keywords, what's new, and URL fields per locale
+- **Character limit tracking** — Live counters and over-limit warnings based on App Store Connect limits
+- **Multi-locale navigation** — Visual badges for unsaved changes and limit errors
+- **Screenshot viewing** — Browse iPhone / iPad sets with a lightbox
+- **Screenshot upload** — Upload AI-generated images directly to ASC
 
-### Toplu import araçları
+### Bulk import tools
 
-| Araç | Açıklama |
-|------|----------|
-| **Privacy Policy** | Bir URL şablonundan tüm locale'lere gizlilik politikası URL'si kopyalama |
-| **Sync URLs** | Birincil locale'deki support / marketing URL'lerini diğer dillere senkronize etme |
-| **Auto Translate** | Gemini ile metadata çevirisi; limit aşımlarında otomatik düzeltme |
-| **Auto Image Generation** | Kaynak locale ekran görüntülerinden hedef dillere AI ile lokalize görsel üretimi |
+| Tool | Description |
+|------|-------------|
+| **Privacy Policy** | Copy a privacy policy URL from a template to all locales |
+| **Sync URLs** | Sync support / marketing URLs from the primary locale to other languages |
+| **Auto Translate** | Translate metadata with Gemini; auto-correct when limits are exceeded |
+| **Auto Image Generation** | Generate localized screenshots for target locales from a source locale |
 
-### AI entegrasyonları
+### AI integrations
 
-| Sağlayıcı | Kullanım alanı |
-|-----------|----------------|
-| **Google Gemini** | Metadata çevirisi, ekran görüntüsü lokalizasyonu (metin + görsel modelleri) |
-| **Wiro AI** | Görsel oluşturma / düzenleme modelleri (ayarlar hazır; entegrasyon genişletilebilir) |
+| Provider | Use case |
+|----------|----------|
+| **Google Gemini** | Metadata translation, screenshot localization (text + image models) |
+| **Wiro AI** | Image generation / editing models (settings ready; integration extensible) |
 
 ---
 
-## Mimari
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     Tarayıcı (Client)                        │
+│                     Browser (Client)                         │
 │  localStorage: Apple credentials, Gemini settings, Wiro      │
 └──────────────────────────┬──────────────────────────────────┘
                            │ POST (credentials in body)
@@ -73,21 +75,21 @@ Apple App Store Connect API, Google Gemini ve Wiro AI entegrasyonlarını tek bi
      REST API
 ```
 
-Kimlik bilgileri her istekte istemciden sunucuya iletilir, harici API çağrısı yapılır ve yanıt döndürülür. Sunucu tarafında veritabanı veya kalıcı credential deposu yoktur.
+Credentials are sent from the client to the server on each request, used for external API calls, and returned. There is no server-side database or persistent credential store.
 
 ---
 
-## Gereksinimler
+## Requirements
 
 - **Node.js** 20+
-- **npm** (veya uyumlu paket yöneticisi)
+- **npm** (or a compatible package manager)
 - App Store Connect **API Key** (.p8 private key)
-- (İsteğe bağlı) [Google AI Studio](https://aistudio.google.com/) Gemini API key
-- (İsteğe bağlı) [Wiro](https://wiro.ai/) API key + secret
+- (Optional) [Google AI Studio](https://aistudio.google.com/) Gemini API key
+- (Optional) [Wiro](https://wiro.ai/) API key + secret
 
 ---
 
-## Kurulum
+## Getting Started
 
 ```bash
 git clone <repo-url>
@@ -96,99 +98,99 @@ npm install
 npm run dev
 ```
 
-Uygulama [http://localhost:3000](http://localhost:3000) adresinde açılır. İlk ziyarette Apple kimlik bilgileri yapılandırılmamışsa otomatik olarak **Settings → Apple Settings** sayfasına yönlendirilirsiniz.
+Open [http://localhost:3000](http://localhost:3000). On first visit, if Apple credentials are not configured, you are redirected to **Settings → Apple Settings**.
 
-### Diğer komutlar
+### Other commands
 
 ```bash
 npm run build    # Production build
-npm run start    # Production sunucu
+npm run start    # Production server
 npm run lint     # ESLint
-npm run test     # Vitest (birim testleri)
+npm run test     # Vitest unit tests
 ```
 
 ---
 
-## Yapılandırma
+## Configuration
 
-Tüm ayarlar **Settings** sayfasından (`/settings`) yönetilir.
+All settings are managed from the **Settings** page (`/settings`).
 
 ### Apple App Store Connect
 
-**Settings → Apple Settings** sekmesinde:
+Under **Settings → Apple Settings**:
 
-| Alan | Açıklama |
-|------|----------|
+| Field | Description |
+|-------|-------------|
 | **Issuer ID** | App Store Connect → Users and Access → Keys → Issuer ID (UUID) |
-| **Key ID** | API anahtarının 10 karakterlik ID'si |
-| **Private Key** | `.p8` dosyasının içeriği (sürükle-bırak veya yapıştır) |
+| **Key ID** | 10-character ID of your API key |
+| **Private Key** | Contents of your `.p8` file (drag-and-drop or paste) |
 
-**Test Connection** ile bağlantı doğrulanır, ardından **Save** ile tarayıcıya kaydedilir.
+Use **Test Connection** to verify, then **Save** to store credentials in the browser.
 
-> API anahtarınızın **App Manager** veya uygun rol ile oluşturulmuş olması gerekir.
+> Your API key must be created with **App Manager** or an appropriate role.
 
 ### Google Gemini
 
-**Settings → Gemini Settings** sekmesinde:
+Under **Settings → Gemini Settings**:
 
-1. [Google AI Studio](https://aistudio.google.com/apikey) üzerinden API key alın
-2. **Verify API Key** ile doğrulayın
-3. **Text Model** — metadata çevirisi için (ör. `gemini-2.5-flash`)
-4. **Image Model** — ekran görüntüsü lokalizasyonu için (ör. `gemini-2.5-flash-image`)
+1. Get an API key from [Google AI Studio](https://aistudio.google.com/apikey)
+2. Click **Verify API Key**
+3. **Text Model** — for metadata translation (e.g. `gemini-2.5-flash`)
+4. **Image Model** — for screenshot localization (e.g. `gemini-2.5-flash-image`)
 5. **Save Settings**
 
-Auto Translate ve Auto Image Generation özellikleri Gemini ayarları kaydedilmeden çalışmaz.
+Auto Translate and Auto Image Generation require saved Gemini settings.
 
 ### Wiro AI
 
-**Settings → Wiro AI Settings** sekmesinde:
+Under **Settings → Wiro AI Settings**:
 
-1. [Wiro Dashboard](https://wiro.ai/panel) üzerinden proje oluşturun
-2. **API Key** ve **API Secret** girin (signature-based authentication)
-3. **Verify Credentials** ile doğrulayın
-4. **Image Model** — image-generation, image-to-image ve image-editing kategorilerindeki modeller listelenir
+1. Create a project in the [Wiro Dashboard](https://wiro.ai/panel)
+2. Enter your **API Key** and **API Secret** (signature-based authentication)
+3. Click **Verify Credentials**
+4. **Image Model** — lists models in image-generation, image-to-image, and image-editing categories
 5. **Save Settings**
 
-Model ID formatı: `owner-slug/model-slug` (ör. `wiro/virtual-try-on`)
+Model ID format: `owner-slug/model-slug` (e.g. `wiro/virtual-try-on`)
 
 ---
 
-## Kullanım
+## Usage
 
-### 1. Uygulama seçimi
+### 1. Select an app
 
-`/apps` sayfasından bir uygulamaya tıklayın. Uygulama detay sayfasında sürüm bilgisi, birincil locale ve tüm lokalizasyonlar görüntülenir.
+Open `/apps` and click an app. The detail page shows version info, primary locale, and all localizations.
 
-### 2. Metadata düzenleme
+### 2. Edit metadata
 
-- Locale rozetlerinden dil seçin
-- **Text** sekmesinde alanları düzenleyin
-- Karakter sayaçları App Store limitlerini gösterir
-- **Save** ile değişiklikleri App Store Connect'e gönderin
+- Pick a locale from the locale badges
+- Edit fields under the **Text** tab
+- Character counters reflect App Store limits
+- Click **Save** to push changes to App Store Connect
 
-**Düzenlenebilir alanlar:** Name, Subtitle, Description, Keywords, What's New, Support URL, Marketing URL, Privacy Policy URL
+**Editable fields:** Name, Subtitle, Description, Keywords, What's New, Support URL, Marketing URL, Privacy Policy URL
 
-### 3. Ekran görüntüleri
+### 3. Screenshots
 
-- **Screenshots** sekmesinde iPhone / iPad setlerini görüntüleyin
-- Tek bir locale için **Create with AI** ile kaynak dilden hedef dile lokalize ekran görüntüsü üretin
-- Üretilen görselleri önizleyip ASC'ye yükleyin
+- View iPhone / iPad sets under the **Screenshots** tab
+- Use **Create with AI** on a locale to generate localized screenshots from a source locale
+- Preview generated images and upload them to ASC
 
-### 4. Toplu işlemler (Import Toolbar)
+### 4. Bulk actions (Import Toolbar)
 
-Uygulama detay sayfasının üst kısmındaki araç çubuğu:
+The toolbar at the top of the app detail page:
 
-- **Privacy Policy** — URL şablonu ile tüm dillere gizlilik politikası linki
-- **Auto Translate** — Seçili locale'lere Gemini çevirisi; kısmi çeviri ve what's new dahil/hariç seçenekleri
-- **Auto Image Generation** — Kaynak locale ekran görüntülerinden toplu AI lokalizasyonu; üretim sonrası inceleme ve toplu yükleme
+- **Privacy Policy** — Apply a privacy policy URL template to all locales
+- **Auto Translate** — Gemini translation for selected locales; partial translation and optional what's new
+- **Auto Image Generation** — Bulk AI screenshot localization from a source locale; review and upload in batch
 
-### 5. URL senkronizasyonu
+### 5. URL sync
 
-Birincil locale'deki support ve marketing URL'lerini diğer dillere kopyalamak için **Sync URLs** modalını kullanın.
+Use the **Sync URLs** modal to copy support and marketing URLs from the primary locale to other languages.
 
 ---
 
-## Proje yapısı
+## Project Structure
 
 ```
 appstore-manager/
@@ -197,88 +199,88 @@ appstore-manager/
 │   │   ├── apple/          # App Store Connect proxy
 │   │   ├── gemini/         # Gemini verify, models, translate, screenshot
 │   │   ├── wiro/           # Wiro verify, models
-│   │   └── image/          # Görsel boyutlandırma (sharp)
-│   ├── apps/               # Uygulama listesi ve detay sayfaları
-│   └── settings/           # Ayarlar sayfası
+│   │   └── image/          # Image resizing (sharp)
+│   ├── apps/               # App list and detail pages
+│   └── settings/           # Settings page
 ├── components/
-│   ├── import/             # Toplu import modalları
-│   ├── settings/           # Apple, Gemini, Wiro ayar formları
-│   └── ui/                 # shadcn/ui bileşenleri
+│   ├── import/             # Bulk import modals
+│   ├── settings/           # Apple, Gemini, Wiro settings forms
+│   └── ui/                 # shadcn/ui components
 ├── lib/
 │   ├── apple/              # ASC client, auth, screenshots, types
 │   ├── gemini/             # Gemini client, translate, prompts
 │   ├── wiro/               # Wiro client, settings
 │   ├── image/              # iPhone screenshot resize
-│   └── screenshots/        # AI generation batch mantığı
-└── public/prompts/         # Düzenlenebilir AI prompt şablonları
+│   └── screenshots/        # AI generation batch logic
+└── public/prompts/         # Editable AI prompt templates
 ```
 
 ---
 
-## API uç noktaları
+## API Endpoints
 
 ### Apple (`/api/apple/*`)
 
-| Endpoint | Açıklama |
-|----------|----------|
-| `POST /api/apple/test` | Kimlik bilgisi doğrulama |
-| `POST /api/apple/apps` | Uygulama listesi |
-| `POST /api/apple/apps/[appId]` | Uygulama detayı |
-| `POST /api/apple/apps/[appId]/localizations` | Metadata kaydetme |
-| `POST /api/apple/apps/[appId]/import/privacy-policy` | Gizlilik politikası URL import |
-| `POST /api/apple/apps/[appId]/import/urls` | Support / marketing URL import |
-| `POST /api/apple/apps/[appId]/screenshots` | Ekran görüntülerini getir |
-| `POST /api/apple/apps/[appId]/screenshots/upload` | Ekran görüntüsü yükle |
+| Endpoint | Description |
+|----------|-------------|
+| `POST /api/apple/test` | Verify credentials |
+| `POST /api/apple/apps` | List apps |
+| `POST /api/apple/apps/[appId]` | App detail |
+| `POST /api/apple/apps/[appId]/localizations` | Save metadata |
+| `POST /api/apple/apps/[appId]/import/privacy-policy` | Import privacy policy URL |
+| `POST /api/apple/apps/[appId]/import/urls` | Import support / marketing URLs |
+| `POST /api/apple/apps/[appId]/screenshots` | Fetch screenshots |
+| `POST /api/apple/apps/[appId]/screenshots/upload` | Upload screenshot |
 
 ### Gemini (`/api/gemini/*`)
 
-| Endpoint | Açıklama |
-|----------|----------|
-| `POST /api/gemini/verify` | API key doğrulama |
-| `POST /api/gemini/models` | Kullanılabilir modelleri listele |
-| `POST /api/gemini/translate-metadata` | Metadata çevirisi / limit düzeltme |
-| `POST /api/gemini/generate-screenshot` | Lokalize ekran görüntüsü üret |
+| Endpoint | Description |
+|----------|-------------|
+| `POST /api/gemini/verify` | Verify API key |
+| `POST /api/gemini/models` | List available models |
+| `POST /api/gemini/translate-metadata` | Translate metadata / fix limits |
+| `POST /api/gemini/generate-screenshot` | Generate localized screenshot |
 
 ### Wiro (`/api/wiro/*`)
 
-| Endpoint | Açıklama |
-|----------|----------|
-| `POST /api/wiro/verify` | API key + secret doğrulama |
-| `POST /api/wiro/models` | Görsel modelleri listele |
+| Endpoint | Description |
+|----------|-------------|
+| `POST /api/wiro/verify` | Verify API key + secret |
+| `POST /api/wiro/models` | List image models |
 
-### Görsel (`/api/image/*`)
+### Image (`/api/image/*`)
 
-| Endpoint | Açıklama |
-|----------|----------|
-| `POST /api/image/resize-iphone-screenshot` | iPhone ekran görüntüsü boyutlandırma |
-
----
-
-## AI prompt dosyaları
-
-`public/prompts/` altındaki metin dosyaları, AI davranışını özelleştirmek için düzenlenebilir:
-
-| Dosya | Kullanım |
-|-------|----------|
-| `metadata-translation.txt` | Metadata çeviri prompt'u |
-| `metadata-limit-correction.txt` | Karakter limiti aşımı düzeltme prompt'u |
-| `screenshot-localization.txt` | Ekran görüntüsü lokalizasyon prompt'u |
-
-Değişiklikler sunucu yeniden başlatıldığında veya cache temizlendiğinde uygulanır.
+| Endpoint | Description |
+|----------|-------------|
+| `POST /api/image/resize-iphone-screenshot` | Resize iPhone screenshot |
 
 ---
 
-## Geliştirme
+## AI Prompt Files
 
-### Teknoloji yığını
+Text files under `public/prompts/` can be edited to customize AI behavior:
+
+| File | Purpose |
+|------|---------|
+| `metadata-translation.txt` | Metadata translation prompt |
+| `metadata-limit-correction.txt` | Character limit correction prompt |
+| `screenshot-localization.txt` | Screenshot localization prompt |
+
+Changes take effect after a server restart or cache clear.
+
+---
+
+## Development
+
+### Tech stack
 
 - **Framework:** Next.js 16 (App Router)
 - **UI:** React 19, Tailwind CSS 4, shadcn/ui, Radix UI
 - **Auth:** Apple JWT (`jose`)
-- **Görsel işleme:** sharp
-- **Test:** Vitest
+- **Image processing:** sharp
+- **Testing:** Vitest
 
-### Metadata karakter limitleri
+### Metadata character limits
 
 ```typescript
 // lib/apple/metadata-limits.ts
@@ -289,26 +291,26 @@ keywords:   100
 whatsNew:   4000
 ```
 
-### localStorage anahtarları
+### localStorage keys
 
-| Anahtar | İçerik |
-|---------|--------|
+| Key | Contents |
+|-----|----------|
 | `asc_credentials` | Apple Issuer ID, Key ID, Private Key |
 | `gemini_settings` | Gemini API key, text/image model, verified |
 | `wiro_settings` | Wiro API key, secret, image model, verified |
 
 ---
 
-## Güvenlik notları
+## Security Notes
 
-- Bu araç **dahili kullanım** için tasarlanmıştır; kimlik bilgileri tarayıcı `localStorage`'ında tutulur
-- Production ortamında HTTPS kullanın
-- `.p8` private key ve API secret'larını asla versiyon kontrolüne eklemeyin
-- Paylaşımlı bilgisayarlarda **Disconnect** ile Apple oturumunu kapatın
-- Gemini ve Wiro API anahtarları istemci → sunucu → harici API akışında geçici olarak kullanılır; sunucuda kalıcı depolanmaz
+- This tool is designed for **internal use**; credentials live in browser `localStorage`
+- Use HTTPS in production
+- Never commit `.p8` private keys or API secrets to version control
+- On shared machines, use **Disconnect** to clear Apple credentials
+- Gemini and Wiro API keys pass through client → server → external API; they are not stored on the server
 
 ---
 
-## Lisans
+## License
 
-Private — dahili kullanım.
+Private — internal use only.
