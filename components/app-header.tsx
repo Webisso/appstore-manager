@@ -49,11 +49,6 @@ export function AppHeader({
         </div>
 
         <div className="flex items-center gap-2">
-          {credentials?.label && (
-            <span className="hidden text-xs text-muted-foreground sm:inline">
-              {credentials.label}
-            </span>
-          )}
           {showSettings && (
             <Button variant="ghost" size="sm" asChild>
               <Link href="/settings">

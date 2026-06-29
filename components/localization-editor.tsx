@@ -27,6 +27,8 @@ export interface LocalizationFormValues {
   name: string;
   subtitle: string;
   privacyPolicyUrl: string;
+  supportUrl: string;
+  marketingUrl: string;
   description: string;
   keywords: string;
   whatsNew: string;
@@ -37,6 +39,8 @@ function toFormValues(loc: LocalizationDetail): LocalizationFormValues {
     name: loc.name ?? "",
     subtitle: loc.subtitle ?? "",
     privacyPolicyUrl: loc.privacyPolicyUrl ?? "",
+    supportUrl: loc.supportUrl ?? "",
+    marketingUrl: loc.marketingUrl ?? "",
     description: (loc.description ?? "").replace(/\\n/g, "\n"),
     keywords: loc.keywords ?? "",
     whatsNew: (loc.whatsNew ?? "").replace(/\\n/g, "\n"),
@@ -169,6 +173,8 @@ export function LocalizationEditor({
           privacyPolicyUrl: form.privacyPolicyUrl,
           description: form.description,
           keywords: form.keywords,
+          supportUrl: form.supportUrl,
+          marketingUrl: form.marketingUrl,
           ...(canEditWhatsNew
             ? { whatsNew: form.whatsNew, includeWhatsNew: true }
             : { includeWhatsNew: false }),
@@ -235,10 +241,21 @@ export function LocalizationEditor({
         {!canSaveVersionFields && (
           <p className="rounded-md border border-dashed border-border/70 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
             Version-level fields require an editable App Store version. Create a
-            new version in App Store Connect to edit description and keywords.
+            new version in App Store Connect to edit description, keywords, and
+            URLs.
           </p>
         )}
 
+        <EditableField
+          label="Support URL"
+          value={form.supportUrl}
+          onChange={(v) => updateField("supportUrl", v)}
+        />
+        <EditableField
+          label="Marketing URL"
+          value={form.marketingUrl}
+          onChange={(v) => updateField("marketingUrl", v)}
+        />
         <EditableField
           label="Description"
           hint="Use blank lines for paragraphs, like in App Store Connect."

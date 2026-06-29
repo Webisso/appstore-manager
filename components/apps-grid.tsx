@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { IconApps } from "@tabler/icons-react";
+import { AppIcon } from "@/components/app-icon";
 import {
   Card,
   CardContent,
@@ -12,29 +13,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AppSummary } from "@/lib/apple/types";
-
-function AppIcon({ name, iconUrl }: { name: string; iconUrl?: string }) {
-  const initial = name.charAt(0).toUpperCase();
-
-  if (iconUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={iconUrl}
-        alt={`${name} icon`}
-        width={48}
-        height={48}
-        className="size-12 shrink-0 rounded-xl object-cover shadow-sm ring-1 ring-border/40 transition-transform group-hover:scale-105"
-      />
-    );
-  }
-
-  return (
-    <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-muted text-lg font-medium text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
-      {initial}
-    </div>
-  );
-}
 
 function AppCardSkeleton() {
   return (

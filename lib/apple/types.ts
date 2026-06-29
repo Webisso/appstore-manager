@@ -59,6 +59,8 @@ export interface AppStoreVersionLocalizationAttributes {
   keywords?: string;
   whatsNew?: string;
   promotionalText?: string;
+  supportUrl?: string;
+  marketingUrl?: string;
 }
 
 export interface IconAssetToken {
@@ -113,6 +115,8 @@ export interface LocalizationDetail {
   keywords?: string;
   whatsNew?: string;
   privacyPolicyUrl?: string;
+  supportUrl?: string;
+  marketingUrl?: string;
 }
 
 export interface LocalizationSavePayload {
@@ -125,8 +129,50 @@ export interface LocalizationSavePayload {
   description?: string;
   keywords?: string;
   whatsNew?: string;
+  supportUrl?: string;
+  marketingUrl?: string;
   /** When false, whatsNew is omitted from save requests. */
   includeWhatsNew?: boolean;
+}
+
+export interface ImageAsset {
+  width?: number;
+  height?: number;
+  templateUrl?: string;
+}
+
+export interface AppScreenshotAttributes {
+  fileName?: string;
+  imageAsset?: ImageAsset;
+  assetDeliveryState?: string;
+}
+
+export interface AppScreenshotSetAttributes {
+  screenshotDisplayType?: string;
+}
+
+export type ScreenshotDeviceCategory = "iphone" | "ipad" | "other";
+
+export interface AppScreenshotDetail {
+  id: string;
+  fileName?: string;
+  imageUrl?: string;
+  width?: number;
+  height?: number;
+  assetDeliveryState?: string;
+}
+
+export interface AppScreenshotSetDetail {
+  id: string;
+  displayType: string;
+  displayLabel: string;
+  deviceCategory: ScreenshotDeviceCategory;
+  screenshots: AppScreenshotDetail[];
+}
+
+export interface LocalizationScreenshots {
+  versionLocalizationId: string;
+  sets: AppScreenshotSetDetail[];
 }
 
 export interface AppleApiError {

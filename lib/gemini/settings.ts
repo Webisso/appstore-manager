@@ -1,4 +1,8 @@
 import type { GeminiSettings } from "./types";
+import { fetchWithTimeout } from "@/lib/async-timeout";
+import {
+  TRANSLATE_API_TIMEOUT_MS,
+} from "./timeouts";
 
 const STORAGE_KEY = "gemini_settings";
 
@@ -61,6 +65,8 @@ export async function fetchGeminiModels(
   return data as import("./types").GeminiModelsResponse;
 }
 
+import type { MetadataTranslatableField } from "@/lib/apple/metadata-limits";
+
 export interface TranslateMetadataRequest {
   apiKey: string;
   model: string;
@@ -69,8 +75,11 @@ export interface TranslateMetadataRequest {
   name?: string;
   subtitle?: string;
   description?: string;
+  keywords?: string;
   whatsNew?: string;
   includeWhatsNew?: boolean;
+  fieldsToTranslate: MetadataTranslatableField[];
+  translationBase: Record<MetadataTranslatableField, string>;
 }
 
 export interface TranslateMetadataResponse {
@@ -78,18 +87,24 @@ export interface TranslateMetadataResponse {
     name: string;
     subtitle: string;
     description: string;
+    keywords: string;
     whatsNew?: string;
   };
+  overLimitFields?: string[];
 }
 
 export async function translateMetadataFromApi(
   payload: TranslateMetadataRequest
 ): Promise<TranslateMetadataResponse> {
-  const response = await fetch("/api/gemini/translate-metadata", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  const response = await fetchWithTimeout(
+    "/api/gemini/translate-metadata",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...payload, action: "translate" }),
+    },
+    TRANSLATE_API_TIMEOUT_MS
+  );
 
   const data = await response.json();
   if (!response.ok) {
@@ -97,4 +112,77 @@ export async function translateMetadataFromApi(
   }
 
   return data as TranslateMetadataResponse;
+}
+
+export interface CorrectMetadataLimitsRequest {
+  apiKey: string;
+  model: string;
+  targetLocale: string;
+  translation: TranslateMetadataResponse["translation"];
+  overLimitFields: string[];
+  includeWhatsNew?: boolean;
+  translationBase: Record<MetadataTranslatableField, string>;
+}
+
+export async function correctMetadataLimitsFromApi(
+  payload: CorrectMetadataLimitsRequest
+): Promise<TranslateMetadataResponse> {
+  const response = await fetchWithTimeout(
+    "/api/gemini/translate-metadata",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...payload, action: "correct" }),
+    },
+    TRANSLATE_API_TIMEOUT_MS
+  );
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Limit correction failed.");
+  }
+
+  return data as TranslateMetadataResponse;
+}
+
+export interface GenerateScreenshotRequest {
+  apiKey: string;
+  model: string;
+  sourceImageUrl: string;
+  sourceLocale: string;
+  targetLocale: string;
+  displayType: string;
+  displayLabel: string;
+  screenshotIndex: number;
+  totalInSet: number;
+  sourceWidth: number;
+  sourceHeight: number;
+  customInstructions?: string;
+}
+
+export interface GenerateScreenshotResponse {
+  imageBase64: string;
+  mimeType: string;
+}
+
+export async function generateScreenshotFromApi(
+  payload: GenerateScreenshotRequest
+): Promise<GenerateScreenshotResponse> {
+  const { GENERATE_SCREENSHOT_API_TIMEOUT_MS } = await import("./timeouts");
+  const response = await fetchWithTimeout(
+    "/api/gemini/generate-screenshot",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+    GENERATE_SCREENSHOT_API_TIMEOUT_MS
+  );
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Screenshot generation failed.");
+  }
+
+  return data as GenerateScreenshotResponse;
 }

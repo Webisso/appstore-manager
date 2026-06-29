@@ -2,17 +2,27 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { IconArrowLeft, IconBrandApple, IconSparkles } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconBrandApple,
+  IconPhotoAi,
+  IconSparkles,
+} from "@tabler/icons-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SetupForm } from "@/components/setup-form";
 import { GeminiSettingsForm } from "@/components/settings/gemini-settings-form";
+import { WiroSettingsForm } from "@/components/settings/wiro-settings-form";
 import { getGeminiSettings } from "@/lib/gemini/settings";
+import { getWiroSettings } from "@/lib/wiro/settings";
 
 export function SettingsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const activeTab = searchParams.get("tab") === "gemini" ? "gemini" : "apple";
+  const tabParam = searchParams.get("tab");
+  const activeTab =
+    tabParam === "gemini" ? "gemini" : tabParam === "wiro" ? "wiro" : "apple";
   const geminiConfigured = Boolean(getGeminiSettings()?.verified);
+  const wiroConfigured = Boolean(getWiroSettings()?.verified);
 
   function handleTabChange(value: string) {
     router.replace(`/settings?tab=${value}`, { scroll: false });
@@ -32,7 +42,7 @@ export function SettingsPageContent() {
         <div className="mb-8">
           <h1 className="text-2xl font-medium tracking-tight">Settings</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Manage your Apple and Gemini integrations
+            Manage your Apple, Gemini, and Wiro integrations
           </p>
         </div>
 
@@ -55,6 +65,16 @@ export function SettingsPageContent() {
                 <span className="size-1.5 rounded-full bg-green-500" />
               )}
             </TabsTrigger>
+            <TabsTrigger
+              value="wiro"
+              className="flex-1 gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm sm:flex-none sm:px-6"
+            >
+              <IconPhotoAi className="size-4" />
+              Wiro AI Settings
+              {wiroConfigured && (
+                <span className="size-1.5 rounded-full bg-green-500" />
+              )}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="apple" className="mt-0">
@@ -63,6 +83,10 @@ export function SettingsPageContent() {
 
           <TabsContent value="gemini" className="mt-0">
             <GeminiSettingsForm />
+          </TabsContent>
+
+          <TabsContent value="wiro" className="mt-0">
+            <WiroSettingsForm />
           </TabsContent>
         </Tabs>
       </div>

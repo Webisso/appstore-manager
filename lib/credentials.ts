@@ -1,4 +1,6 @@
 import type { AppleCredentials } from "@/lib/apple/types";
+import { fetchWithTimeout } from "@/lib/async-timeout";
+import { SAVE_LOCALIZATION_TIMEOUT_MS } from "@/lib/gemini/timeouts";
 
 const STORAGE_KEY = "asc_credentials";
 
@@ -30,13 +32,18 @@ export function hasCredentials(): boolean {
 
 export async function apiPost<T>(
   path: string,
-  body: AppleCredentials | (AppleCredentials & Record<string, unknown>)
+  body: AppleCredentials | (AppleCredentials & Record<string, unknown>),
+  timeoutMs = SAVE_LOCALIZATION_TIMEOUT_MS
 ): Promise<T> {
-  const response = await fetch(path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  const response = await fetchWithTimeout(
+    path,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+    timeoutMs
+  );
 
   const data = await response.json();
 
@@ -92,4 +99,57 @@ export async function importPrivacyPolicyFromApi(
     ...credentials,
     ...payload,
   });
+}
+
+export async function importVersionUrlsFromApi(
+  credentials: AppleCredentials,
+  appId: string,
+  payload: {
+    versionLocalizationId: string;
+    locale: string;
+    supportUrl: string;
+    marketingUrl: string;
+  }
+): Promise<{
+  locale: string;
+  supportUrl: string;
+  marketingUrl: string;
+  versionLocalizationId: string;
+}> {
+  return apiPost(`/api/apple/apps/${appId}/import/urls`, {
+    ...credentials,
+    ...payload,
+  });
+}
+
+export async function fetchLocalizationScreenshotsFromApi(
+  credentials: AppleCredentials,
+  appId: string,
+  versionLocalizationId: string
+): Promise<{ screenshots: import("@/lib/apple/types").LocalizationScreenshots }> {
+  const { SCREENSHOTS_FETCH_TIMEOUT_MS } = await import("@/lib/gemini/timeouts");
+  return apiPost(
+    `/api/apple/apps/${appId}/screenshots`,
+    { ...credentials, versionLocalizationId },
+    SCREENSHOTS_FETCH_TIMEOUT_MS
+  );
+}
+
+export async function uploadScreenshotFromApi(
+  credentials: AppleCredentials,
+  appId: string,
+  payload: {
+    versionLocalizationId: string;
+    displayType: string;
+    fileName: string;
+    imageBase64: string;
+    mimeType: string;
+  }
+): Promise<{ screenshotId: string; setId: string }> {
+  const { SCREENSHOT_UPLOAD_TIMEOUT_MS } = await import("@/lib/gemini/timeouts");
+  return apiPost(
+    `/api/apple/apps/${appId}/screenshots/upload`,
+    { ...credentials, ...payload },
+    SCREENSHOT_UPLOAD_TIMEOUT_MS
+  );
 }

@@ -48,7 +48,10 @@ export async function updateVersionLocalization(
   credentials: AppleCredentials,
   id: string,
   attributes: Partial<
-    Pick<AppStoreVersionLocalizationAttributes, "description" | "keywords" | "whatsNew">
+    Pick<
+      AppStoreVersionLocalizationAttributes,
+      "description" | "keywords" | "whatsNew" | "supportUrl" | "marketingUrl"
+    >
   >
 ): Promise<void> {
   await appleFetch(
@@ -66,7 +69,10 @@ export async function createVersionLocalization(
   versionId: string,
   locale: string,
   attributes: Partial<
-    Pick<AppStoreVersionLocalizationAttributes, "description" | "keywords" | "whatsNew">
+    Pick<
+      AppStoreVersionLocalizationAttributes,
+      "description" | "keywords" | "whatsNew" | "supportUrl" | "marketingUrl"
+    >
   >
 ): Promise<string> {
   const response = await appleFetch<
@@ -113,6 +119,18 @@ export async function updatePrivacyPolicyOnly(
   });
 }
 
+export async function updateVersionUrlsOnly(
+  credentials: AppleCredentials,
+  id: string,
+  supportUrl: string,
+  marketingUrl: string
+): Promise<void> {
+  await updateVersionLocalization(credentials, id, {
+    supportUrl,
+    marketingUrl,
+  });
+}
+
 export async function saveLocalization(
   credentials: AppleCredentials,
   payload: LocalizationSavePayload,
@@ -128,6 +146,8 @@ export async function saveLocalization(
     description,
     keywords,
     whatsNew,
+    supportUrl,
+    marketingUrl,
     includeWhatsNew = true,
   } = payload;
 
@@ -142,10 +162,15 @@ export async function saveLocalization(
   }
 
   const versionAttributes: Partial<
-    Pick<AppStoreVersionLocalizationAttributes, "description" | "keywords" | "whatsNew">
+    Pick<
+      AppStoreVersionLocalizationAttributes,
+      "description" | "keywords" | "whatsNew" | "supportUrl" | "marketingUrl"
+    >
   > = {
     description: description ?? "",
     keywords: keywords ?? "",
+    supportUrl: supportUrl ?? "",
+    marketingUrl: marketingUrl ?? "",
   };
 
   if (includeWhatsNew) {
@@ -176,6 +201,8 @@ export async function saveLocalization(
     privacyPolicyUrl,
     description,
     keywords,
+    supportUrl,
+    marketingUrl,
     ...(includeWhatsNew ? { whatsNew } : {}),
   };
 }

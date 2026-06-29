@@ -468,6 +468,8 @@ function mapVersionLocalizations(
       description: attrs.description,
       keywords: attrs.keywords,
       whatsNew: attrs.whatsNew,
+      supportUrl: attrs.supportUrl,
+      marketingUrl: attrs.marketingUrl,
     };
   });
 }
@@ -495,6 +497,8 @@ function mergeLocalizations(
       description: loc.description,
       keywords: loc.keywords,
       whatsNew: loc.whatsNew,
+      supportUrl: loc.supportUrl,
+      marketingUrl: loc.marketingUrl,
     });
   }
 

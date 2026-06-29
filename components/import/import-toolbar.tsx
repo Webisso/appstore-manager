@@ -1,20 +1,21 @@
 "use client";
 
-import { IconDownload, IconLanguage } from "@tabler/icons-react";
+import { IconDownload, IconLanguage, IconSparkles } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 
 interface ImportToolbarProps {
   onPrivacyPolicyImport: () => void;
   onAutoTranslate: () => void;
+  onAutoImageGeneration: () => void;
 }
 
 export function ImportToolbar({
   onPrivacyPolicyImport,
   onAutoTranslate,
+  onAutoImageGeneration,
 }: ImportToolbarProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-xs text-muted-foreground">Import</span>
       <Button
         type="button"
         variant="outline"
@@ -32,6 +33,15 @@ export function ImportToolbar({
       >
         <IconLanguage className="size-3.5" />
         Auto Translate
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onAutoImageGeneration}
+      >
+        <IconSparkles className="size-3.5" />
+        Auto Image Generation
       </Button>
     </div>
   );

@@ -2,24 +2,36 @@ import {
   METADATA_FIELD_LIMITS,
   type MetadataTranslatableField,
 } from "@/lib/apple/metadata-limits";
+import { fetchWithTimeout } from "@/lib/async-timeout";
+import { mergeTranslationFields } from "./copy-fields";
 import {
+  buildMetadataLimitCorrectionPrompt,
   buildMetadataTranslationPrompt,
+  loadMetadataLimitCorrectionPrompt,
   loadMetadataTranslationPrompt,
   type MetadataPromptSource,
 } from "./prompts";
+import { GEMINI_REQUEST_TIMEOUT_MS } from "./timeouts";
 
 const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta";
 
 export interface MetadataTranslationInput extends MetadataPromptSource {
   apiKey: string;
   model: string;
+  translationBase: Record<MetadataTranslatableField, string>;
 }
 
 export interface MetadataTranslationResult {
   name: string;
   subtitle: string;
   description: string;
+  keywords: string;
   whatsNew?: string;
+}
+
+export interface MetadataTranslationOutput {
+  translation: MetadataTranslationResult;
+  overLimitFields: MetadataTranslatableField[];
 }
 
 interface GeminiGenerateResponse {
@@ -31,9 +43,25 @@ interface GeminiGenerateResponse {
   error?: { message?: string };
 }
 
+function toTranslationResult(
+  fields: Record<MetadataTranslatableField, string>
+): MetadataTranslationResult {
+  const result: MetadataTranslationResult = {
+    name: fields.name,
+    subtitle: fields.subtitle,
+    description: fields.description,
+    keywords: fields.keywords,
+  };
+  if (fields.whatsNew !== undefined) {
+    result.whatsNew = fields.whatsNew;
+  }
+  return result;
+}
+
 function parseTranslationJson(
   text: string,
-  includeWhatsNew: boolean
+  base: Record<MetadataTranslatableField, string>,
+  fieldsToMerge: MetadataTranslatableField[]
 ): MetadataTranslationResult {
   let parsed: Record<string, unknown>;
 
@@ -47,50 +75,19 @@ function parseTranslationJson(
     parsed = JSON.parse(match[0]) as Record<string, unknown>;
   }
 
-  const result: MetadataTranslationResult = {
-    name: String(parsed.name ?? ""),
-    subtitle: String(parsed.subtitle ?? ""),
-    description: String(parsed.description ?? ""),
-  };
-
-  if (includeWhatsNew) {
-    result.whatsNew = String(parsed.whatsNew ?? "");
-  }
-
-  return result;
+  return toTranslationResult(
+    mergeTranslationFields(base, parsed, fieldsToMerge)
+  );
 }
 
-function getOverLimitFields(
+export function getOverLimitFields(
   result: MetadataTranslationResult,
-  includeWhatsNew: boolean
+  fieldsToCheck: MetadataTranslatableField[]
 ): MetadataTranslatableField[] {
-  const fields: MetadataTranslatableField[] = ["name", "subtitle", "description"];
-  if (includeWhatsNew) fields.push("whatsNew");
-
-  return fields.filter((field) => {
+  return fieldsToCheck.filter((field) => {
     const value = result[field as keyof MetadataTranslationResult] ?? "";
     return value.length > METADATA_FIELD_LIMITS[field];
   });
-}
-
-function enforceHardLimits(
-  result: MetadataTranslationResult,
-  includeWhatsNew: boolean
-): MetadataTranslationResult {
-  const limited: MetadataTranslationResult = {
-    name: result.name.slice(0, METADATA_FIELD_LIMITS.name),
-    subtitle: result.subtitle.slice(0, METADATA_FIELD_LIMITS.subtitle),
-    description: result.description.slice(0, METADATA_FIELD_LIMITS.description),
-  };
-
-  if (includeWhatsNew) {
-    limited.whatsNew = (result.whatsNew ?? "").slice(
-      0,
-      METADATA_FIELD_LIMITS.whatsNew
-    );
-  }
-
-  return limited;
 }
 
 async function callGemini(
@@ -103,18 +100,22 @@ async function callGemini(
   );
   url.searchParams.set("key", apiKey);
 
-  const response = await fetch(url.toString(), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store",
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0.3,
-      },
-    }),
-  });
+  const response = await fetchWithTimeout(
+    url.toString(),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.3,
+        },
+      }),
+    },
+    GEMINI_REQUEST_TIMEOUT_MS
+  );
 
   const data = (await response.json()) as GeminiGenerateResponse;
 
@@ -130,44 +131,89 @@ async function callGemini(
   return text;
 }
 
-function buildShortenPrompt(
-  result: MetadataTranslationResult,
-  overLimit: MetadataTranslatableField[],
-  targetLocale: string
-): string {
-  const violations = overLimit
-    .map((field) => {
-      const value = result[field as keyof MetadataTranslationResult] ?? "";
-      return `- ${field}: ${value.length} chars (max ${METADATA_FIELD_LIMITS[field]})\n  Current: ${JSON.stringify(value)}`;
-    })
-    .join("\n");
+export async function translateMetadataInitial(
+  input: MetadataTranslationInput
+): Promise<MetadataTranslationOutput> {
+  const template = await loadMetadataTranslationPrompt();
+  const prompt = buildMetadataTranslationPrompt(template, input);
 
-  return `The following App Store metadata fields for locale ${targetLocale} exceed their character limits. Rewrite ONLY the listed fields to fit within the limits while preserving meaning and natural ${targetLocale} phrasing. Return the full JSON object with all fields (name, subtitle, description${overLimit.includes("whatsNew") ? ", whatsNew" : ""}).
+  const raw = await callGemini(input.apiKey, input.model, prompt);
+  const base = input.translationBase;
+  const translation = parseTranslationJson(
+    raw,
+    base,
+    input.fieldsToTranslate
+  );
 
-Violations:
-${violations}
+  return {
+    translation,
+    overLimitFields: getOverLimitFields(translation, input.fieldsToTranslate),
+  };
+}
 
-Return ONLY valid JSON.`;
+export interface MetadataLimitCorrectionInput {
+  apiKey: string;
+  model: string;
+  targetLocale: string;
+  translation: MetadataTranslationResult;
+  overLimitFields: MetadataTranslatableField[];
+  includeWhatsNew: boolean;
+  translationBase: Record<MetadataTranslatableField, string>;
+}
+
+export async function correctMetadataLimits(
+  input: MetadataLimitCorrectionInput
+): Promise<MetadataTranslationOutput> {
+  const template = await loadMetadataLimitCorrectionPrompt();
+  const prompt = buildMetadataLimitCorrectionPrompt(template, {
+    targetLocale: input.targetLocale,
+    name: input.translation.name,
+    subtitle: input.translation.subtitle,
+    description: input.translation.description,
+    keywords: input.translation.keywords,
+    whatsNew: input.translation.whatsNew,
+    includeWhatsNew: input.includeWhatsNew,
+    overLimitFields: input.overLimitFields,
+  });
+
+  const raw = await callGemini(input.apiKey, input.model, prompt);
+  const translation = parseTranslationJson(
+    raw,
+    input.translationBase,
+    input.overLimitFields
+  );
+
+  return {
+    translation,
+    overLimitFields: getOverLimitFields(translation, input.overLimitFields),
+  };
 }
 
 export async function translateMetadata(
   input: MetadataTranslationInput
 ): Promise<MetadataTranslationResult> {
-  const template = await loadMetadataTranslationPrompt();
-  const prompt = buildMetadataTranslationPrompt(template, input);
+  let { translation, overLimitFields } = await translateMetadataInitial(input);
 
-  let raw = await callGemini(input.apiKey, input.model, prompt);
-  let result = parseTranslationJson(raw, input.includeWhatsNew);
-
-  const overLimit = getOverLimitFields(result, input.includeWhatsNew);
-  if (overLimit.length > 0) {
-    raw = await callGemini(
-      input.apiKey,
-      input.model,
-      buildShortenPrompt(result, overLimit, input.targetLocale)
-    );
-    result = parseTranslationJson(raw, input.includeWhatsNew);
+  if (overLimitFields.length > 0) {
+    const corrected = await correctMetadataLimits({
+      apiKey: input.apiKey,
+      model: input.model,
+      targetLocale: input.targetLocale,
+      translation,
+      overLimitFields,
+      includeWhatsNew: input.includeWhatsNew,
+      translationBase: input.translationBase,
+    });
+    translation = corrected.translation;
+    overLimitFields = corrected.overLimitFields;
   }
 
-  return enforceHardLimits(result, input.includeWhatsNew);
+  if (overLimitFields.length > 0) {
+    const fields = overLimitFields.join(", ");
+    throw new Error(
+      `Translation still exceeds character limits after correction: ${fields}`
+    );
+  }
+
+  return translation;
 }

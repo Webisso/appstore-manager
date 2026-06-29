@@ -17,13 +17,17 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import type { GeminiModelOption } from "@/lib/gemini/types";
+export interface ModelOption {
+  id: string;
+  name: string;
+  description?: string;
+}
 
 interface ModelComboboxProps {
   label: string;
   placeholder?: string;
   value?: string;
-  options: GeminiModelOption[];
+  options: ModelOption[];
   onChange: (value: string) => void;
   disabled?: boolean;
 }
